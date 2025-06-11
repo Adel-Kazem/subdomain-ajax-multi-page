@@ -1,0 +1,123 @@
+/* Custom CSS styles beyond Tailwind */
+
+/* Custom variables */
+:root {
+    --primary-color: #7f1d1d; /* red-900 */
+    --secondary-color: #fbbf24; /* yellow-400 */
+    --text-color: #333333;
+    --background-color: #ffffff;
+}
+
+/* Global styles */
+html {
+    scroll-behavior: smooth;
+}
+
+[x-cloak] {
+    display: none !important;
+}
+
+/* Product card animations */
+.product-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Badge styles */
+.badge {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    z-index: 10;
+}
+
+.badge-featured {
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+}
+
+.badge-new {
+    background-color: #10b981; /* emerald-500 */
+    color: white;
+}
+
+.badge-sale {
+    background-color: #ef4444; /* red-500 */
+    color: white;
+}
+
+/* Price styles */
+.price-original {
+    text-decoration: line-through;
+    color: #6b7280; /* gray-500 */
+    margin-right: 0.5rem;
+}
+
+.price-sale {
+    color: #ef4444; /* red-500 */
+    font-weight: bold;
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}
+
+.animate-slide-in-right {
+    animation: slideInRight 0.3s ease-in-out;
+}
+
+/* Cart notification */
+.cart-notification {
+    position: fixed;
+    top: 5rem;
+    right: 1rem;
+    padding: 1rem;
+    background-color: #f0fdf4; /* green-50 */
+    border-left: 4px solid #22c55e; /* green-500 */
+    border-radius: 0.375rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    z-index: 50;
+    animation: slideInRight 0.3s ease-in-out;
+}
+
+/* Breadcrumbs */
+.breadcrumb-item::after {
+    content: "/";
+    margin: 0 0.5rem;
+    color: #9ca3af; /* gray-400 */
+}
+
+.breadcrumb-item:last-child::after {
+    content: "";
+    margin: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .cart-notification {
+        top: auto;
+        bottom: 5rem;
+        left: 1rem;
+        right: 1rem;
+    }
+}

@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Prime Beef Lebanon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="js/categories.js"></script>
+    <script src="js/products.js"></script>
+    <script src="js/shared.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="font-sans bg-gray-50"
+      x-data="{
+        step: 1, // 1: Contact Info, 2: Shipping, 3: Payment, 4: Review
+        contactInfo: {
+          firstName: '',
+          lastName: '',
+          email: '',
+          phone: ''
+        },
+        shippingInfo: {
+          address: '',
+          city: '',
+          region: '',
+          postalCode: '',
+          deliveryMethod: 'standard' // standard, express, pickup
+        },
+        paymentInfo: {
+          method: 'cod', // cod, bank-transfer, credit-card
+          notes: ''
+        },
+
+        // Validate contact info
+        validateContactInfo() {
+          if (!this.contactInfo.firstName ||
+              !this.contactInfo.lastName ||
+              !this.contactInfo.email ||
+              !this.contactInfo.phone) {
+            alert('Please fill in all contact information fields');
+            return false;
+          }
+          return true;
+        },
+
+        // Validate shipping info
+        validateShippingInfo() {
+          if (this.shippingInfo.deliveryMethod === 'pickup') {
+            return true;
+          }
+
+          if (!this.shippingInfo.address ||
+              !this.shippingInfo.city ||
+              !this.shippingInfo.region) {
+            alert('Please fill in all shipping information fields');
+            return false;
+          }
+          return true;
+        },
+
+        // Validate payment info
+        validatePaymentInfo() {
+          if (!this.paymentInfo.method) {
+            alert('Please select a payment method');
+            return false;
+          }
+          return true;
+        },
+
+        // Get delivery cost
+        getDeliveryCost() {
+          switch(this.shippingInfo.deliveryMethod) {
+            case 'express':
+              return 15.00;
+            case 'standard':
+              return 8.00;
+            case 'pickup':
+              return 0.00;
+            default:
+              return 0.00;
+          }
+        },
+
+        // Get order total
+        getOrderTotal() {
+          return (parseFloat($store.cart.getTotalPrice()) + this.getDeliveryCost()).toFixed(2);
+        },
+
+        // Next step
+        nextStep() {
+          if (this.step === 1 && this.validateContactInfo()) {
+            this.step = 2;
+          } else if (this.step === 2 && this.validateShippingInfo()) {
+            this.step = 3;
+          } else if (this.step === 3 && this.validatePaymentInfo()) {
+            this.step = 4;
+          }
+        },
+
+        // Previous step
+        prevStep() {
+          if (this.step > 1) {
+            this.step--;
+          }
+        },
+
+        // Submit order
+        submitOrder() {
+          // In a real application, you would send the order data to a server
+          // For this demo, we'll just clear the cart and redirect to a success page
+
+          // Since we don't have a real order processing system,
+          // we can simulate order submission via WhatsApp
+          const orderDetails = `
+Order Details:
+
+Contact Information:
+${this.contactInfo.firstName} ${this.contactInfo.lastName}
+${this.contactInfo.email}
+${this.contactInfo.phone}
+
+Shipping Information:
+${this.shippingInfo.deliveryMethod === 'pickup' ? 'Store Pickup' :
+  this.shippingInfo.address + ', ' +
+  this.shippingInfo.city + ', ' +
+  this.shippingInfo.region + ' ' +
+  this.shippingInfo.postalCode}
+Delivery Method: ${this.shippingInfo.deliveryMethod === 'express' ? 'Express' :
+                  this.shippingInfo.deliveryMethod === 'standard' ? 'Standard' : 'Store Pickup'}
+
+Payment Method: ${this.paymentInfo.method === 'cod' ? 'Cash on Delivery' :
+                this.paymentInfo.method === 'bank-transfer' ? 'Bank Transfer' : 'Credit Card'}
+
+Order Notes: ${this.paymentInfo.notes}
+
+Items:
+${$store.cart.items.map(item => `- ${item.name} (${item.quantity} × $${item.price.toFixed(2)}) = $${(item.price * item.quantity).toFixed(2)}`).join('\\n')}
+
+Subtotal: $${$store.cart.getTotalPrice()}
+Delivery: $${this.getDeliveryCost().toFixed(2)}
+Total: $${this.getOrderTotal()}
+          `;
+
+          // Encode the message for WhatsApp
+          const encodedMessage = encodeURIComponent(orderDetails);
+          window.open(`https://wa.me/96170608543?text=${encodedMessage}`, '_blank');
+
+          // Clear cart and redirect
+          $store.cart.clearCart();
+          window.location.href = 'index.html?order=success';
+        }
+      }"
+      x-init="if ($store.cart.items.length === 0) window.location.href = 'cart.html'">
+
+<!-- SVG Sprites -->
+<svg xmlns="http://www.w3.org/2000/svg" class="hidden">
+    <!-- Cart Icon -->
+    <symbol id="cart-icon" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9" cy="21" r="1"></circle>
+        <circle cx="20" cy="21" r="1"></circle>
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+    </symbol>
+    <!-- Check Icon -->
+    <symbol id="check-icon" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 6L9 17l-5-5"></path>
+    </symbol>
+    <!-- Arrow Left Icon -->
+    <symbol id="arrow-left-icon" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+    </symbol>
+    <!-- WhatsApp Icon -->
+    <symbol id="whatsapp-icon" viewbox="0 0 24 24" fill="currentColor">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"></path>
+    </symbol>
+    <!-- User Icon -->
+    <symbol id="user-icon" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+    </symbol>
+    <!-- Truck Icon -->
+    <symbol id="truck-icon" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1" y="3" width="15" height="13"></rect>
+        <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+        <circle cx="5.5" cy="18.5" r="2.5"></circle>
+        <circle cx="18.5" cy="18.5" r="2.5"></circle>
+    </symbol>
+    <!-- Credit Card Icon -->
+    <symbol id="credit-card-icon" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+        <line x1="1" y1="10" x2="23" y2="10"></line>
+    </symbol>
+    <!-- Clipboard Icon -->
+    <symbol id="clipboard-icon" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+    </symbol>
+</svg>
+
+<!-- Header -->
+<header id="header" class="bg-red-900 text-white shadow-lg sticky top-0 z-50">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+        <div id="logo-container" class="flex items-center">
+            <a href="index.html" class="flex items-center">
+                <h1 id="logo-text" class="text-3xl font-bold">
+                    <span id="logo-prefix" class="text-white">Prime</span><span id="logo-highlight" class="text-yellow-400">Beef</span>
+                </h1>
+            </a>
+        </div>
+
+        <!-- Desktop Navigation -->
+        <nav id="desktop-nav" class="hidden md:flex space-x-8">
+            <a id="home-link" href="index.html" class="hover:text-yellow-300 transition-colors">Home</a>
+            <a id="about-link" href="index.html#about" class="hover:text-yellow-300 transition-colors">About Us</a>
+            <a id="products-link" href="products.html" class="hover:text-yellow-300 transition-colors">Products</a>
+            <a id="services-link" href="index.html#services" class="hover:text-yellow-300 transition-colors">Services</a>
+            <a id="contact-link" href="index.html#contact" class="hover:text-yellow-300 transition-colors">Contact</a>
+        </nav>
+
+        <!-- Mobile Menu Button -->
+        <div class="flex items-center space-x-4">
+            <a href="cart.html" class="relative text-white">
+                <svg class="w-6 h-6">
+                    <use href="#cart-icon"></use>
+                </svg>
+                <span
+                        x-show="$store.cart.getTotalItems() > 0"
+                        x-text="$store.cart.getTotalItems()"
+                        class="absolute -top-2 -right-2 bg-yellow-500 text-red-900 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+          </span>
+            </a>
+
+            <button id="mobile-menu-button"
+                    @click="$store.ui.isMenuOpen = !$store.ui.isMenuOpen"
+                    class="md:hidden text-white focus:outline-none">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobile Navigation -->
+    <div id="mobile-nav"
+         x-show="$store.ui.isMenuOpen"
+         x-cloak
+         @click.away="$store.ui.isMenuOpen = false"
+         class="md:hidden bg-red-800 px-4 py-2">
+        <div class="flex flex-col space-y-3">
+            <a id="mobile-home-link" href="index.html" @click="$store.ui.isMenuOpen = false" class="text-white hover:text-yellow-300 transition-colors">Home</a>
+            <a id="mobile-about-link" href="index.html#about" @click="$store.ui.isMenuOpen = false" class="text-white hover:text-yellow-300 transition-colors">About Us</a>
+            <a id="mobile-products-link" href="products.html" @click="$store.ui.isMenuOpen = false" class="text-white hover:text-yellow-300 transition-colors">Products</a>
+            <a id="mobile-services-link" href="index.html#services" @click="$store.ui.isMenuOpen = false" class="text-white hover:text-yellow-300 transition-colors">Services</a>
+            <a id="mobile-contact-link" href="index.html#contact" @click="$store.ui.isMenuOpen = false" class="text-white hover:text-yellow-300 transition-colors">Contact</a>
+        </div>
+    </div>
+</header>
+
+<!-- Breadcrumbs -->
+<div class="bg-gray-100 py-3">
+    <div class="container mx-auto px-4">
+        <div class="flex text-sm text-gray-600">
+            <a href="index.html" class="hover:text-red-900 breadcrumb-item">Home</a>
+            <a href="cart.html" class="hover:text-red-900 breadcrumb-item">Cart</a>
+            <span>Checkout</span>
+        </div>
+    </div>
+</div>
+
+<!-- Checkout Section -->
+<section class="py-12">
+    <div class="container mx-auto px-4">
+        <h1 class="text-3xl font-bold mb-8 text-center text-red-900">Checkout</h1>
+
+        <!-- Checkout Steps -->
+        <div class="mb-12 max-w-3xl mx-auto">
+            <div class="flex items-center justify-between relative">
+                <!-- Step 1 -->
+                <div class="flex flex-col items-center">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center border-2 z-10"
+                         :class="step >= 1 ? 'bg-red-800 border-red-800 text-white' : 'border-gray-300 bg-white text-gray-500'">
+                        <svg x-show="step > 1" class="w-6 h-6">
+                            <use href="#check-icon"></use>
+                        </svg>
+                        <span x-show="step <= 1">1</span>
+                    </div>
+                    <span class="mt-2 text-sm font-medium" :class="step >= 1 ? 'text-red-800' : 'text-gray-500'">Contact Info</span>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="flex flex-col items-center">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center border-2 z-10"
+                         :class="step >= 2 ? 'bg-red-800 border-red-800 text-white' : 'border-gray-300 bg-white text-gray-500'">
+                        <svg x-show="step > 2" class="w-6 h-6">
+                            <use href="#check-icon"></use>
+                        </svg>
+                        <span x-show="step <= 2">2</span>
+                    </div>
+                    <span class="mt-2 text-sm font-medium" :class="step >= 2 ? 'text-red-800' : 'text-gray-500'">Shipping</span>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="flex flex-col items-center">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center border-2 z-10"
+                         :class="step >= 3 ? 'bg-red-800 border-red-800 text-white' : 'border-gray-300 bg-white text-gray-500'">
+                        <svg x-show="step > 3" class="w-6 h-6">
+                            <use href="#check-icon"></use>
+                        </svg>
+                        <span x-show="step <= 3">3</span>
+                    </div>
+                    <span class="mt-2 text-sm font-medium" :class="step >= 3 ? 'text-red-800' : 'text-gray-500'">Payment</span>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="flex flex-col items-center">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center border-2 z-10"
+                         :class="step >= 4 ? 'bg-red-800 border-red-800 text-white' : 'border-gray-300 bg-white text-gray-500'">
+                        <svg x-show="step > 4" class="w-6 h-6">
+                            <use href="#check-icon"></use>
+                        </svg>
+                        <span x-show="step <= 4">4</span>
+                    </div>
+                    <span class="mt-2 text-sm font-medium" :class="step >= 4 ? 'text-red-800' : 'text-gray-500'">Review</span>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="absolute top-5 h-0.5 bg-gray-300 w-full -z-10"></div>
+                <div class="absolute top-5 h-0.5 bg-red-800 -z-10 transition-all duration-300"
+                     :style="'width: ' + (step === 1 ? '0%' : step === 2 ? '33%' : step === 3 ? '66%' : '100%')"></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Checkout Form -->
+            <div class="lg:col-span-2">
+                <!-- Contact Information Form -->
+                <div x-show="step === 1" class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-red-800">
+                            <use href="#user-icon"></use>
+                        </svg>
+                        Contact Information
+                    </h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="firstName" class="block text-gray-700 font-medium mb-2">First Name *</label>
+                            <input
+                                    type="text"
+                                    id="firstName"
+                                    x-model="contactInfo.firstName"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
+                        </div>
+
+                        <div>
+                            <label for="lastName" class="block text-gray-700 font-medium mb-2">Last Name *</label>
+                            <input
+                                    type="text"
+                                    id="lastName"
+                                    x-model="contactInfo.lastName"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
+                        </div>
+
+                        <div>
+                            <label for="email" class="block text-gray-700 font-medium mb-2">Email *</label>
+                            <input
+                                    type="email"
+                                    id="email"
+                                    x-model="contactInfo.email"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
+                        </div>
+
+                        <div>
+                            <label for="phone" class="block text-gray-700 font-medium mb-2">Phone Number *</label>
+                            <input
+                                    type="tel"
+                                    id="phone"
+                                    x-model="contactInfo.phone"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
+                        </div>
+                    </div>
+
+                    <div class="mt-8 flex justify-end">
+                        <button
+                                @click="nextStep()"
+                                class="bg-red-800 hover:bg-red-900 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                            Continue to Shipping
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Shipping Information Form -->
+                <div x-show="step === 2" class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-red-800">
+                            <use href="#truck-icon"></use>
+                        </svg>
+                        Shipping Information
+                    </h2>
+
+                    <!-- Delivery Method Selection -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-medium text-gray-800 mb-4">Delivery Method</h3>
+
+                        <div class="space-y-4">
+                            <label class="flex items-center p-4 border rounded-lg cursor-pointer transition-colors"
+                                   :class="shippingInfo.deliveryMethod === 'standard' ? 'border-red-800 bg-red-50' : 'border-gray-300 hover:border-gray-400'">
+                                <input
+                                        type="radio"
+                                        name="deliveryMethod"
+                                        value="standard"
+                                        x-model="shippingInfo.deliveryMethod"
+                                        class="text-red-800 focus:ring-red-500 h-4 w-4">
+                                <div class="ml-3">
+                                    <span class="block font-medium text-gray-800">Standard Delivery</span>
+                                    <span class="block text-sm text-gray-600">2-3 business days</span>
+                                </div>
+                                <span class="ml-auto font-medium text-gray-800">$8.00</span>
+                            </label>
+
+                            <label class="flex items-center p-4 border rounded-lg cursor-pointer transition-colors"
+                                   :class="shippingInfo.deliveryMethod === 'express' ? 'border-red-800 bg-red-50' : 'border-gray-300 hover:border-gray-400'">
+                                <input
+                                        type="radio"
+                                        name="deliveryMethod"
+                                        value="express"
+                                        x-model="shippingInfo.deliveryMethod"
+                                        class="text-red-800 focus:ring-red-500 h-4 w-4">
+                                <div class="ml-3">
+                                    <span class="block font-medium text-gray-800">Express Delivery</span>
+                                    <span class="block text-sm text-gray-600">Next business day</span>
+                                </div>
+                                <span class="ml-auto font-medium text-gray-800">$15.00</span>
+                            </label>
+
+                            <label class="flex items-center p-4 border rounded-lg cursor-pointer transition-colors"
+                                   :class="shippingInfo.deliveryMethod === 'pickup' ? 'border-red-800 bg-red-50' : 'border-gray-300 hover:border-gray-400'">
+                                <input
+                                        type="radio"
+                                        name="deliveryMethod"
+                                        value="pickup"
+                                        x-model="shippingInfo.deliveryMethod"
+                                        class="text-red-800 focus:ring-red-500 h-4 w-4">
+                                <div class="ml-3">
+                                    <span class="block font-medium text-gray-800">Store Pickup</span>
+                                    <span class="block text-sm text-gray-600">Available in 1-2 hours</span>
+                                </div>
+                                <span class="ml-auto font-medium text-gray-800">Free</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Address Fields (only shown if not pickup) -->
+                    <div x-show="shippingInfo.deliveryMethod !== 'pickup'">
+                        <h3 class="text-lg font-medium text-gray-800 mb-4">Shipping Address</h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="md:col-span-2">
+                                <label for="address" class="block text-gray-700 font-medium mb-2">Street Address *</label>
+                                <input
+                                        type="text"
+                                        id="address"
+                                        x-model="shippingInfo.address"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
+                            </div>
+
+                            <div>
+                                <label for="city" class="block text-gray-700 font-medium mb-2">City *</label>
+                                <input
+                                        type="text"
+                                        id="city"
+                                        x-model="shippingInfo.city"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
+                            </div>
+
+                            <div>
+                                <label for="region" class="block text-gray-700 font-medium mb-2">Region/State *</label>
+                                <input
+                                        type="text"
+                                        id="region"
+                                        x-model="shippingInfo.region"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
+                            </div>
+
+                            <div>
+                                <label for="postalCode" class="block text-gray-700 font-medium mb-2">Postal Code</label>
+                                <input
+                                        type="text"
+                                        id="postalCode"
+                                        x-model="shippingInfo.postalCode"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Store Location (only shown if pickup) -->
+                    <div x-show="shippingInfo.deliveryMethod === 'pickup'" class="mt-6">
+                        <h3 class="text-lg font-medium text-gray-800 mb-4">Pickup Location</h3>
+
+                        <div class="border rounded-lg p-4 bg-gray-50">
+                            <div class="font-medium text-gray-800">Prime Beef - Nabatieh Store</div>
+                            <div class="text-gray-600 mt-1">Main Street, Shokein, Nabatieh, Lebanon</div>
+                            <div class="text-gray-600 mt-1">Hours: Mon-Sat 8AM-7PM, Sun 9AM-2PM</div>
+                            <div class="text-gray-600 mt-1">Phone: +961 70 123 456</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 flex justify-between">
+                        <button
+                                @click="prevStep()"
+                                class="border border-gray-300 bg-white hover:bg-gray-50 text-gray-800 font-bold py-2 px-6 rounded-lg transition-colors">
+                            Back
+                        </button>
+
+                        <button
+                                @click="nextStep()"
+                                class="bg-red-800 hover:bg-red-900 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                            Continue to Payment
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Payment Information Form -->
+                <div x-show="step === 3" class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-red-800">
+                            <use href="#credit-card-icon"></use>
+                        </svg>
+                        Payment Information
+                    </h2>
+
+                    <!-- Payment Method Selection -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-medium text-gray-800 mb-4">Payment Method</h3>
+
+                        <div class="space-y-4">
+                            <label class="flex items-center p-4 border rounded-lg cursor-pointer transition-colors"
+                                   :class="paymentInfo.method === 'cod' ? 'border-red-800 bg-red-50' : 'border-gray-300 hover:border-gray-400'">
+                                <input
+                                        type="radio"
+                                        name="paymentMethod"
+                                        value="cod"
+                                        x-model="paymentInfo.method"
+                                        class="text-red-800 focus:ring-red-500 h-4 w-4">
+                                <div class="ml-3">
+                                    <span class="block font-medium text-gray-800">Cash on Delivery</span>
+                                    <span class="block text-sm text-gray-600">Pay when your order arrives</span>
+                                </div>
+                            </label>
+
+                            <label class="flex items-center p-4 border rounded-lg cursor-pointer transition-colors"
+                                   :class="paymentInfo.method === 'bank-transfer' ? 'border-red-800 bg-red-50' : 'border-gray-300 hover:border-gray-400'">
+                                <input
+                                        type="radio"
+                                        name="paymentMethod"
+                                        value="bank-transfer"
+                                        x-model="paymentInfo.method"
+                                        class="text-red-800 focus:ring-red-500 h-4 w-4">
+                                <div class="ml-3">
+                                    <span class="block font-medium text-gray-800">Bank Transfer</span>
+                                    <span class="block text-sm text-gray-600">Pay via bank transfer before delivery</span>
+                                </div>
+                            </label>
+
+                            <!-- Note: Credit card processing would require a payment gateway in a real application -->
+                            <label class="flex items-center p-4 border rounded-lg cursor-pointer opacity-50"
+                                   title="Coming soon!">
+                                <input
+                                        type="radio"
+                                        name="paymentMethod"
+                                        value="credit-card"
+                                        disabled
+                                        class="text-red-800 focus:ring-red-500 h-4 w-4">
+                                <div class="ml-3">
+                                    <span class="block font-medium text-gray-800">Credit Card (Coming Soon)</span>
+                                    <span class="block text-sm text-gray-600">Pay securely with credit card</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Order Notes -->
+                    <div class="mt-6">
+                        <label for="notes" class="block text-gray-700 font-medium mb-2">Order Notes (Optional)</label>
+                        <textarea
+                                id="notes"
+                                x-model="paymentInfo.notes"
+                                rows="4"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                                placeholder="Special instructions for delivery or preparation"></textarea>
+                    </div>
+
+                    <div class="mt-8 flex justify-between">
+                        <button
+                                @click="prevStep()"
+                                class="border border-gray-300 bg-white hover:bg-gray-50 text-gray-800 font-bold py-2 px-6 rounded-lg transition-colors">
+                            Back
+                        </button>
+
+                        <button
+                                @click="nextStep()"
+                                class="bg-red-800 hover:bg-red-900 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                            Review Order
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Review Order -->
+                <div x-show="step === 4" class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-red-800">
+                            <use href="#clipboard-icon"></use>
+                        </svg>
+                        Review Your Order
+                    </h2>
+
+                    <!-- Contact Information Review -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-medium text-gray-800 mb-2">Contact Information</h3>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <p class="text-gray-800" x-text="contactInfo.firstName + ' ' + contactInfo.lastName"></p>
+                            <p class="text-gray-600" x-text="contactInfo.email"></p>
+                            <p class="text-gray-600" x-text="contactInfo.phone"></p>
+                        </div>
+                    </div>
+
+                    <!-- Shipping Information Review -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-medium text-gray-800 mb-2">Shipping Information</h3>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="font-medium text-gray-800">
+                                <span x-show="shippingInfo.deliveryMethod === 'standard'">Standard Delivery (2-3 business days)</span>
+                                <span x-show="shippingInfo.deliveryMethod === 'express'">Express Delivery (Next business day)</span>
+                                <span x-show="shippingInfo.deliveryMethod === 'pickup'">Store Pickup (1-2 hours)</span>
+                            </div>
+
+                            <div x-show="shippingInfo.deliveryMethod !== 'pickup'" class="mt-2">
+                                <p class="text-gray-600" x-text="shippingInfo.address"></p>
+                                <p class="text-gray-600" x-text="shippingInfo.city + ', ' + shippingInfo.region + ' ' + shippingInfo.postalCode"></p>
+                            </div>
+
+                            <div x-show="shippingInfo.deliveryMethod === 'pickup'" class="mt-2">
+                                <p class="text-gray-600">Prime Beef - Nabatieh Store</p>
+                                <p class="text-gray-600">Main Street, Shokein, Nabatieh, Lebanon</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Information Review -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-medium text-gray-800 mb-2">Payment Information</h3>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <p class="text-gray-800">
+                                <span x-show="paymentInfo.method === 'cod'">Cash on Delivery</span>
+                                <span x-show="paymentInfo.method === 'bank-transfer'">Bank Transfer</span>
+                            </p>
+
+                            <div x-show="paymentInfo.notes" class="mt-2">
+                                <p class="text-gray-600 text-sm">Order Notes:</p>
+                                <p class="text-gray-600" x-text="paymentInfo.notes"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Order Items -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-medium text-gray-800 mb-4">Order Items</h3>
+
+                        <div class="space-y-4">
+                            <template x-for="item in $store.cart.items" :key="item.id">
+                                <div class="flex items-center py-4 border-b border-gray-200">
+                                    <img :src="Array.isArray(item.images) ? item.images[0] : item.images" :alt="item.name" class="w-16 h-16 object-cover rounded-md">
+
+                                    <div class="ml-4 flex-1">
+                                        <h4 class="text-gray-800 font-medium" x-text="item.name"></h4>
+                                        <p class="text-gray-600 text-sm">Quantity: <span x-text="item.quantity"></span></p>
+                                    </div>
+
+                                    <div class="text-right">
+                                        <p class="font-medium text-gray-800" x-text="'$' + (item.price * item.quantity).toFixed(2)"></p>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 flex justify-between">
+                        <button
+                                @click="prevStep()"
+                                class="border border-gray-300 bg-white hover:bg-gray-50 text-gray-800 font-bold py-2 px-6 rounded-lg transition-colors">
+                            Back
+                        </button>
+
+                        <button
+                                @click="submitOrder()"
+                                class="bg-red-800 hover:bg-red-900 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                            Place Order
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div>
+                <div class="bg-white rounded-lg shadow-md p-6 sticky top-24">
+                    <h2 class="text-xl font-bold text-gray-800 mb-6">Order Summary</h2>
+
+                    <!-- Order Items -->
+                    <div class="max-h-64 overflow-auto mb-6">
+                        <template x-for="item in $store.cart.items" :key="item.id">
+                            <div class="flex items-center py-2 border-b border-gray-200">
+                                <img :src="Array.isArray(item.images) ? item.images[0] : item.images" :alt="item.name" class="w-12 h-12 object-cover rounded-md">
+
+                                <div class="ml-3 flex-1">
+                                    <h4 class="text-gray-800 text-sm" x-text="item.name"></h4>
+                                    <p class="text-gray-600 text-xs">Qty: <span x-text="item.quantity"></span></p>
+                                </div>
+
+                                <div class="text-right">
+                                    <p class="text-sm font-medium text-gray-800" x-text="'$' + (item.price * item.quantity).toFixed(2)"></p>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Order Details -->
+                    <div class="space-y-3 mb-6">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Subtotal</span>
+                            <span class="font-medium text-gray-800" x-text="'$' + $store.cart.getTotalPrice()"></span>
+                        </div>
+
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Shipping</span>
+                            <span class="font-medium text-gray-800" x-text="'$' + getDeliveryCost().toFixed(2)"></span>
+                        </div>
+
+                        <!-- Total -->
+                        <div class="flex justify-between border-t border-gray-200 pt-3">
+                            <span class="text-lg font-bold text-gray-800">Total</span>
+                            <span class="text-lg font-bold text-red-900" x-text="'$' + getOrderTotal()"></span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center">
+                        <a href="cart.html" class="text-red-800 hover:text-red-900 font-medium inline-flex items-center">
+                            <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <use href="#arrow-left-icon"></use>
+                            </svg>
+                            Back to Cart
+                        </a>
+                    </div>
+
+                    <div class="text-center text-sm text-gray-600 mt-6">
+                        <svg class="w-5 h-5 mx-auto mb-2 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                        </svg>
+                        <p>Your information is secure and encrypted</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer id="footer" class="bg-red-900 text-white py-12">
+    <div class="container mx-auto px-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div>
+                <h3 id="footer-about-heading" class="text-xl font-bold mb-4">Prime Beef</h3>
+                <p id="footer-about-text" class="text-gray-300 mb-4">Your trusted source for premium beef cuts in Lebanon. We pride ourselves on quality, expertise, and exceptional service.</p>
+                <div id="footer-social" class="flex space-x-4">
+                    <a href="#" class="text-white hover:text-yellow-300 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewbox="0 0 24 24">
+                            <path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z"></path>
+                        </svg>
+                    </a>
+                    <a href="#" class="text-white hover:text-yellow-300 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewbox="0 0 24 24">
+                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"></path>
+                        </svg>
+                    </a>
+                    <a href="#" class="text-white hover:text-yellow-300 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewbox="0 0 24 24">
+                            <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"></path>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+            <div>
+                <h3 id="footer-links-heading" class="text-xl font-bold mb-4">Quick Links</h3>
+                <ul class="space-y-2">
+                    <li>
+                        <a id="footer-home-link" href="index.html" class="text-gray-300 hover:text-yellow-300 transition-colors">Home</a>
+                    </li>
+                    <li>
+                        <a id="footer-about-link" href="index.html#about" class="text-gray-300 hover:text-yellow-300 transition-colors">About Us</a>
+                    </li>
+                    <li>
+                        <a id="footer-products-link" href="products.html" class="text-gray-300 hover:text-yellow-300 transition-colors">Products</a>
+                    </li>
+                    <li>
+                        <a id="footer-services-link" href="index.html#services" class="text-gray-300 hover:text-yellow-300 transition-colors">Services</a>
+                    </li>
+                    <li>
+                        <a id="footer-contact-link" href="index.html#contact" class="text-gray-300 hover:text-yellow-300 transition-colors">Contact</a>
+                    </li>
+                </ul>
+            </div>
+            <div>
+                <h3 id="footer-categories-heading" class="text-xl font-bold mb-4">Categories</h3>
+                <ul class="space-y-2">
+                    <template x-for="category in CATEGORIES.slice(0, 5)" :key="category.id">
+                        <li>
+                            <a :href="'products.html?category=' + category.id" class="text-gray-300 hover:text-yellow-300 transition-colors" x-text="category.name"></a>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+            <div>
+                <h3 id="footer-contact-heading" class="text-xl font-bold mb-4">Contact Us</h3>
+                <ul class="space-y-2">
+                    <li id="footer-address" class="text-gray-300">Main Street, Shokein, Nabatieh, Lebanon</li>
+                    <li id="footer-phone" class="text-gray-300">+961 70 123 456</li>
+                    <li id="footer-email" class="text-gray-300">info@primebeef.lb</li>
+                    <li id="footer-hours" class="text-gray-300">Mon-Sat: 8AM-7PM, Sun: 9AM-2PM</li>
+                </ul>
+            </div>
+        </div>
+        <div class="border-t border-red-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <p id="copyright" class="text-gray-300 text-center md:text-left mb-4 md:mb-0">© 2025 Prime Beef. All rights reserved.</p>
+            <p id="credits" class="text-gray-300 text-center md:text-right">Website designed with ♥ by RN Team</p>
+        </div>
+    </div>
+</footer>
+
+<!-- WhatsApp Button -->
+<button id="whatsapp-button" @click="$store.ui.openWhatsApp()" class="fixed bottom-6 right-6 bg-green-500 hover:bg-green-600 text-white p-3 rounded-full shadow-lg transition-colors z-50">
+    <svg class="w-6 h-6">
+        <use href="#whatsapp-icon"></use>
+    </svg>
+</button>
+
+</body>
+</html>

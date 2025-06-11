@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products - Prime Beef Lebanon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="js/categories.js"></script>
+    <script src="js/products.js"></script>
+    <script src="js/shared.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="font-sans bg-gray-50"
+      x-data="{
+        searchQuery: '',
+        selectedCategory: null,
+        view: 'grid', // grid or list
+        sortBy: 'featured', // featured, price-asc, price-desc, name, rating
+
+        // Initialize from URL parameters
+        init() {
+          const categoryParam = getUrlParameter('category');
+          if (categoryParam) {
+            this.selectedCategory = parseInt(categoryParam);
+          }
+        },
+
+        // Get category name by ID
+        getCategoryName(categoryId) {
+          const category = CATEGORIES.find(cat => cat.id === categoryId);
+          return category ? category.name : 'All Products';
+        },
+
+        // Filter and sort products
+        getFilteredProducts() {
+          // First filter by category and search query
+          let filtered = PRODUCTS.filter(product =>
+            (this.selectedCategory === null || product.categoryId === this.selectedCategory) &&
+            (product.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+             product.description.toLowerCase().includes(this.searchQuery.toLowerCase()))
+          );
+
+          // Then sort
+          switch(this.sortBy) {
+            case 'price-asc':
+              filtered.sort((a, b) => (a.salePrice || a.price) - (b.salePrice || b.price));
+              break;
+            case 'price-desc':
+              filtered.sort((a, b) => (b.salePrice || b.price) - (a.salePrice || a.price));
+              break;
+            case 'name':
+              filtered.sort((a, b) => a.name.localeCompare(b.name));
+              break;
+            case 'rating':
+              filtered.sort((a, b) => b.rating - a.rating);
+              break;
+            case 'featured':
+            default:
+              // Featured first, then new arrivals, then the rest
+              filtered.sort((a, b) => {
+                if (a.featured && !b.featured) return -1;
+                if (!a.featured && b.featured) return 1;
+                if (a.new && !b.new) return -1;
+                if (!a.new && b.new) return 1;
+                return 0;
+              });
+          }
+
+          return filtered;
+        }
+      }">
+
+<!-- SVG Sprites -->
+<svg xmlns="http://www.w3.org/2000/svg" class="hidden">
+    <!-- Cart Icon -->
+    <symbol id="cart-icon" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9" cy="21" r="1"></circle>
+        <circle cx="20" cy="21" r="1"></circle>
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+    </symbol>
+    <!-- Star Icon -->
+    <symbol id="star-icon" viewbox="0 0 24 24" fill="currentColor">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+    </symbol>
+    <!-- WhatsApp Icon -->
+    <symbol id="whatsapp-icon" viewbox="0 0 24 24" fill="currentColor">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"></path>
+    </symbol>
+    <!-- Arrow Up Icon -->
+    <symbol id="arrow-up-icon" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 19V5M5 12l7-7 7 7"></path>
+    </symbol>
+    <!-- Grid View Icon -->
+    <symbol id="grid-view-icon" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7"></rect>
+        <rect x="14" y="3" width="7" height="7"></rect>
+        <rect x="3" y="14" width="7" height="7"></rect>
+        <rect x="14" y="14" width="7" height="7"></rect>
+    </symbol>
+    <!-- List View Icon -->
+    <symbol id="list-view-icon" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="8" y1="6" x2="21" y2="6"></line>
+        <line x1="8" y1="12" x2="21" y2="12"></line>
+        <line x1="8" y1="18" x2="21" y2="18"></line>
+        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+    </symbol>
+</svg>
+
+<!-- Header -->
+<header id="header" class="bg-red-900 text-white shadow-lg sticky top-0 z-50">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+        <div id="logo-container" class="flex items-center">
+            <a href="index.html" class="flex items-center">
+                <h1 id="logo-text" class="text-3xl font-bold">
+                    <span id="logo-prefix" class="text-white">Prime</span><span id="logo-highlight" class="text-yellow-400">Beef</span>
+                </h1>
+            </a>
+        </div>
+
+        <!-- Desktop Navigation -->
+        <nav id="desktop-nav" class="hidden md:flex space-x-8">
+            <a id="home-link" href="index.html" class="hover:text-yellow-300 transition-colors">Home</a>
+            <a id="about-link" href="index.html#about" class="hover:text-yellow-300 transition-colors">About Us</a>
+            <a id="products-link" href="products.html" class="hover:text-yellow-300 transition-colors">Products</a>
+            <a id="services-link" href="index.html#services" class="hover:text-yellow-300 transition-colors">Services</a>
+            <a id="contact-link" href="index.html#contact" class="hover:text-yellow-300 transition-colors">Contact</a>
+        </nav>
+
+        <!-- Mobile Menu Button -->
+        <div class="flex items-center space-x-4">
+            <a href="cart.html" class="relative text-white">
+                <svg class="w-6 h-6">
+                    <use href="#cart-icon"></use>
+                </svg>
+                <span
+                        x-show="$store.cart.getTotalItems() > 0"
+                        x-text="$store.cart.getTotalItems()"
+                        class="absolute -top-2 -right-2 bg-yellow-500 text-red-900 text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+          </span>
+            </a>
+
+            <button id="mobile-menu-button"
+                    @click="$store.ui.isMenuOpen = !$store.ui.isMenuOpen"
+                    class="md:hidden text-white focus:outline-none">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobile Navigation -->
+    <div id="mobile-nav"
+         x-show="$store.ui.isMenuOpen"
+         x-cloak
+         @click.away="$store.ui.isMenuOpen = false"
+         class="md:hidden bg-red-800 px-4 py-2">
+        <div class="flex flex-col space-y-3">
+            <a id="mobile-home-link" href="index.html" @click="$store.ui.isMenuOpen = false" class="text-white hover:text-yellow-300 transition-colors">Home</a>
+            <a id="mobile-about-link" href="index.html#about" @click="$store.ui.isMenuOpen = false" class="text-white hover:text-yellow-300 transition-colors">About Us</a>
+            <a id="mobile-products-link" href="products.html" @click="$store.ui.isMenuOpen = false" class="text-white hover:text-yellow-300 transition-colors">Products</a>
+            <a id="mobile-services-link" href="index.html#services" @click="$store.ui.isMenuOpen = false" class="text-white hover:text-yellow-300 transition-colors">Services</a>
+            <a id="mobile-contact-link" href="index.html#contact" @click="$store.ui.isMenuOpen = false" class="text-white hover:text-yellow-300 transition-colors">Contact</a>
+        </div>
+    </div>
+</header>
+
+<!-- Breadcrumbs -->
+<div class="bg-gray-100 py-3">
+    <div class="container mx-auto px-4">
+        <div class="flex text-sm text-gray-600">
+            <a href="index.html" class="hover:text-red-900 breadcrumb-item">Home</a>
+            <span class="breadcrumb-item">Products</span>
+            <span x-show="selectedCategory !== null" x-text="getCategoryName(selectedCategory)"></span>
+        </div>
+    </div>
+</div>
+
+<!-- Products Section -->
+<section class="py-12">
+    <div class="container mx-auto px-4">
+        <h1 class="text-3xl font-bold mb-2 text-center text-red-900">Our Premium Beef Cuts</h1>
+        <p class="text-gray-600 text-center mb-12 max-w-3xl mx-auto">Discover our selection of high-quality beef cuts, prepared with expertise and care for the most discerning meat lovers.</p>
+
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Sidebar -->
+            <div class="lg:w-1/4">
+                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <h2 class="text-xl font-bold mb-4 text-gray-900">Categories</h2>
+                    <ul class="space-y-2">
+                        <li>
+                            <button
+                                    @click="selectedCategory = null"
+                                    class="w-full text-left py-2 px-3 rounded-md transition-colors"
+                                    :class="selectedCategory === null ? 'bg-red-100 text-red-900 font-medium' : 'hover:bg-gray-100'">
+                                All Products
+                            </button>
+                        </li>
+                        <template x-for="category in CATEGORIES" :key="category.id">
+                            <li>
+                                <button
+                                        @click="selectedCategory = category.id"
+                                        class="w-full text-left py-2 px-3 rounded-md transition-colors"
+                                        :class="selectedCategory === category.id ? 'bg-red-100 text-red-900 font-medium' : 'hover:bg-gray-100'">
+                                    <span x-text="category.name"></span>
+                                </button>
+                            </li>
+                        </template>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div class="lg:w-3/4">
+                <!-- Search and Filter Controls -->
+                <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <!-- Search Bar -->
+                        <div class="relative md:w-1/2">
+                            <input
+                                    x-model="searchQuery"
+                                    type="text"
+                                    placeholder="Search products..."
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
+                            <div class="absolute right-3 top-2.5 text-gray-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Sort and View Controls -->
+                        <div class="flex items-center gap-4">
+                            <!-- Sort Dropdown -->
+                            <div class="relative">
+                                <select
+                                        x-model="sortBy"
+                                        class="appearance-none px-4 py-2 pr-8 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-white">
+                                    <option value="featured">Featured</option>
+                                    <option value="price-asc">Price: Low to High</option>
+                                    <option value="price-desc">Price: High to Low</option>
+                                    <option value="name">Name</option>
+                                    <option value="rating">Rating</option>
+                                </select>
+                                <div class="absolute right-3 top-3 pointer-events-none text-gray-500">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                            </div>
+
+                            <!-- View Toggle -->
+                            <div class="flex border border-gray-300 rounded-lg overflow-hidden">
+                                <button
+                                        @click="view = 'grid'"
+                                        class="p-2 border-r border-gray-300"
+                                        :class="view === 'grid' ? 'bg-red-100 text-red-900' : 'text-gray-500 hover:bg-gray-100'">
+                                    <svg class="w-5 h-5">
+                                        <use href="#grid-view-icon"></use>
+                                    </svg>
+                                </button>
+                                <button
+                                        @click="view = 'list'"
+                                        class="p-2"
+                                        :class="view === 'list' ? 'bg-red-100 text-red-900' : 'text-gray-500 hover:bg-gray-100'">
+                                    <svg class="w-5 h-5">
+                                        <use href="#list-view-icon"></use>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product Results Count -->
+                <p class="text-gray-600 mb-6">
+                    Showing <span x-text="getFilteredProducts().length"></span> products
+                </p>
+
+                <!-- Grid View -->
+                <div x-show="view === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <template x-for="product in getFilteredProducts()" :key="product.id">
+                        <a :href="'product.html?id=' + product.id" class="product-card bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg">
+                            <div class="relative">
+                                <img :src="Array.isArray(product.images) ? product.images[0] : product.images" :alt="product.name" class="w-full h-48 object-cover">
+                                <div x-show="product.featured" class="badge badge-featured">Featured</div>
+                                <div x-show="product.new" class="badge badge-new" style="left: auto; right: 1rem;">New</div>
+                                <div x-show="product.sale" class="badge badge-sale" style="top: auto; bottom: 1rem;">Sale</div>
+                            </div>
+                            <div class="p-4">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h3 class="text-lg font-bold text-gray-900" x-text="product.name"></h3>
+                                    <div class="flex items-center">
+                                        <svg class="w-4 h-4 text-yellow-400">
+                                            <use href="#star-icon"></use>
+                                        </svg>
+                                        <span class="ml-1 text-gray-600 text-sm" x-text="product.rating"></span>
+                                    </div>
+                                </div>
+                                <p class="text-gray-600 text-sm mb-3 line-clamp-2" x-text="product.description"></p>
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <span x-show="product.salePrice" class="price-original text-sm" x-text="'$' + product.price.toFixed(2)"></span>
+                                        <span x-show="product.salePrice" class="price-sale" x-text="'$' + product.salePrice.toFixed(2)"></span>
+                                        <span x-show="!product.salePrice" class="text-lg font-bold text-red-900" x-text="'$' + product.price.toFixed(2)"></span>
+                                    </div>
+                                    <button
+                                            @click.stop.prevent="$store.cart.addItem(product)"
+                                            class="bg-red-800 hover:bg-red-900 text-white px-3 py-1 rounded-lg flex items-center transition-colors text-sm">
+                                        <svg class="w-4 h-4 mr-1">
+                                            <use href="#cart-icon"></use>
+                                        </svg>
+                                        Add
+                                    </button>
+                                </div>
+                            </div>
+                        </a>
+                    </template>
+                </div>
+
+                <!-- List View -->
+                <div x-show="view === 'list'" class="space-y-4">
+                    <template x-for="product in getFilteredProducts()" :key="product.id">
+                        <a :href="'product.html?id=' + product.id" class="product-card flex flex-col md:flex-row bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg">
+                            <div class="relative md:w-1/3">
+                                <img :src="Array.isArray(product.images) ? product.images[0] : product.images" :alt="product.name" class="w-full h-60 md:h-full object-cover">
+                                <div x-show="product.featured" class="badge badge-featured">Featured</div>
+                                <div x-show="product.new" class="badge badge-new" style="left: auto; right: 1rem;">New</div>
+                                <div x-show="product.sale" class="badge badge-sale" style="top: auto; bottom: 1rem;">Sale</div>
+                            </div>
+                            <div class="p-6 md:w-2/3">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h3 class="text-xl font-bold text-gray-900" x-text="product.name"></h3>
+                                    <div class="flex items-center">
+                                        <svg class="w-5 h-5 text-yellow-400">
+                                            <use href="#star-icon"></use>
+                                        </svg>
+                                        <span class="ml-1 text-gray-600" x-text="product.rating"></span>
+                                    </div>
+                                </div>
+                                <p class="text-gray-600 mb-4" x-text="product.description"></p>
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <span x-show="product.salePrice" class="price-original" x-text="'$' + product.price.toFixed(2)"></span>
+                                        <span x-show="product.salePrice" class="price-sale" x-text="'$' + product.salePrice.toFixed(2)"></span>
+                                        <span x-show="!product.salePrice" class="text-xl font-bold text-red-900" x-text="'$' + product.price.toFixed(2)"></span>
+                                    </div>
+                                    <button
+                                            @click.stop.prevent="$store.cart.addItem(product)"
+                                            class="bg-red-800 hover:bg-red-900 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
+                                        <svg class="w-5 h-5 mr-2">
+                                            <use href="#cart-icon"></use>
+                                        </svg>
+                                        Add to Cart
+                                    </button>
+                                </div>
+                            </div>
+                        </a>
+                    </template>
+                </div>
+
+                <!-- No Results Message -->
+                <div x-show="getFilteredProducts().length === 0" class="text-center py-12">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-gray-400 mb-4" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <h3 class="text-xl font-bold text-gray-700 mb-2">No Products Found</h3>
+                    <p class="text-gray-500 mb-4">We couldn't find any products matching your criteria.</p>
+                    <button @click="searchQuery = ''; selectedCategory = null" class="text-red-800 hover:text-red-900 font-medium">Clear Filters</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer id="footer" class="bg-red-900 text-white py-12">
+    <div class="container mx-auto px-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div>
+                <h3 id="footer-about-heading" class="text-xl font-bold mb-4">Prime Beef</h3>
+                <p id="footer-about-text" class="text-gray-300 mb-4">Your trusted source for premium beef cuts in Lebanon. We pride ourselves on quality, expertise, and exceptional service.</p>
+                <div id="footer-social" class="flex space-x-4">
+                    <a href="#" class="text-white hover:text-yellow-300 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewbox="0 0 24 24">
+                            <path d="M22.675 0h-21.35c-.732 0-1.325.593-1.325 1.325v21.351c0 .731.593 1.324 1.325 1.324h11.495v-9.294h-3.128v-3.622h3.128v-2.671c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.795.143v3.24l-1.918.001c-1.504 0-1.795.715-1.795 1.763v2.313h3.587l-.467 3.622h-3.12v9.293h6.116c.73 0 1.323-.593 1.323-1.325v-21.35c0-.732-.593-1.325-1.325-1.325z"></path>
+                        </svg>
+                    </a>
+                    <a href="#" class="text-white hover:text-yellow-300 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewbox="0 0 24 24">
+                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"></path>
+                        </svg>
+                    </a>
+                    <a href="#" class="text-white hover:text-yellow-300 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewbox="0 0 24 24">
+                            <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"></path>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+            <div>
+                <h3 id="footer-links-heading" class="text-xl font-bold mb-4">Quick Links</h3>
+                <ul class="space-y-2">
+                    <li>
+                        <a id="footer-home-link" href="index.html" class="text-gray-300 hover:text-yellow-300 transition-colors">Home</a>
+                    </li>
+                    <li>
+                        <a id="footer-about-link" href="index.html#about" class="text-gray-300 hover:text-yellow-300 transition-colors">About Us</a>
+                    </li>
+                    <li>
+                        <a id="footer-products-link" href="products.html" class="text-gray-300 hover:text-yellow-300 transition-colors">Products</a>
+                    </li>
+                    <li>
+                        <a id="footer-services-link" href="index.html#services" class="text-gray-300 hover:text-yellow-300 transition-colors">Services</a>
+                    </li>
+                    <li>
+                        <a id="footer-contact-link" href="index.html#contact" class="text-gray-300 hover:text-yellow-300 transition-colors">Contact</a>
+                    </li>
+                </ul>
+            </div>
+            <div>
+                <h3 id="footer-categories-heading" class="text-xl font-bold mb-4">Categories</h3>
+                <ul class="space-y-2">
+                    <template x-for="category in CATEGORIES.slice(0, 5)" :key="category.id">
+                        <li>
+                            <a :href="'products.html?category=' + category.id" class="text-gray-300 hover:text-yellow-300 transition-colors" x-text="category.name"></a>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+            <div>
+                <h3 id="footer-contact-heading" class="text-xl font-bold mb-4">Contact Us</h3>
+                <ul class="space-y-2">
+                    <li id="footer-address" class="text-gray-300">Main Street, Shokein, Nabatieh, Lebanon</li>
+                    <li id="footer-phone" class="text-gray-300">+961 70 123 456</li>
+                    <li id="footer-email" class="text-gray-300">info@primebeef.lb</li>
+                    <li id="footer-hours" class="text-gray-300">Mon-Sat: 8AM-7PM, Sun: 9AM-2PM</li>
+                </ul>
+            </div>
+        </div>
+        <div class="border-t border-red-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <p id="copyright" class="text-gray-300 text-center md:text-left mb-4 md:mb-0">© 2025 Prime Beef. All rights reserved.</p>
+            <p id="credits" class="text-gray-300 text-center md:text-right">Website designed with ♥ by RN Team</p>
+        </div>
+    </div>
+</footer>
+
+<!-- WhatsApp Button -->
+<button id="whatsapp-button" @click="$store.ui.openWhatsApp()" class="fixed bottom-6 right-6 bg-green-500 hover:bg-green-600 text-white p-3 rounded-full shadow-lg transition-colors z-50">
+    <svg class="w-6 h-6">
+        <use href="#whatsapp-icon"></use>
+    </svg>
+</button>
+
+<!-- Scroll to Top Button -->
+<button id="scroll-top-button" @click="$store.ui.scrollToTop()" class="fixed bottom-6 left-6 bg-red-800 hover:bg-red-900 text-white p-3 rounded-full shadow-lg transition-colors z-50">
+    <svg class="w-6 h-6">
+        <use href="#arrow-up-icon"></use>
+    </svg>
+</button>
+
+<!-- Cart Notification -->
+<div x-show="$store.ui.showCartNotification"
+     x-cloak
+     class="cart-notification">
+    <div class="flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500 mr-2" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <p class="text-gray-700">Item added to cart!</p>
+        <a href="cart.html" class="ml-auto text-red-800 hover:text-red-900 font-medium">View Cart</a>
+    </div>
+</div>
+
+</body>
+</html>
